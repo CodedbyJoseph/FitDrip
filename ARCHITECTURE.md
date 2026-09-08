@@ -22,6 +22,23 @@ deployed   |  vercel
 Next.js + Vercel
 PRO: one project for front and back, one deploy, same language both sides; Vercel made Next.js so no config needed
 
+## Dependencies
+```
+MACHINE
+node, npm, git
+
+PROJECT
+next, react, react-dom     |  framework, ui library
+typescript, @types/*       |  types
+tailwindcss                |  styling
+@supabase/supabase-js      |  database, auth, storage
+@supabase/ssr              |  reads the session inside route.ts
+@imgly/background-removal  |  cut-out
+browser-image-compression  |  shrink before upload
+@google/genai              |  gemini
+shadcn ui                  |  prebuilt components
+```
+
 ## Frontend Decisions
 ```
 PROBLEM                                                            |  SOLUTION
@@ -207,6 +224,21 @@ items bucket  |  the first folder in the path must = auth.uid()     -->{ user_id
 *logged in users can only reach files inside their own folder
 ```
 
+## PWA
+```
+installed from the mobile browser via "add to home screen".
+
+Additions:
+
+app/manifest.ts   |  appearance and behaviour of PWA (name, icon, splash screen)
+public/icons      |  the picture on the home screen (iphone needs its own copy)
+
+iphone installs with just those two. android also wants a service worker
+(@serwist/next) before it offers to install — a background script normally used
+for offline mode. not worth chasing here: the wardrobe photos live online, so
+offline would show empty boxes anyway.
+```
+
 ## Project Tree (TENTATIVE)
 ```
 fitdrip/
@@ -219,6 +251,7 @@ fitdrip/
 │   ├── outfits/page.tsx          /outfits            saved outfits
 │   ├── outfits/builder/page.tsx  /outfits/builder    manual builder
 │   ├── stylist/page.tsx          /stylist            ai chat
+│   ├── manifest.ts               pwa - makes "add to home screen" open as an app
 │   └── api/
 │       └── stylist/route.ts      SERVER ONLY - holds GEMINI_API_KEY
 │
@@ -236,8 +269,11 @@ fitdrip/
 │   ├── upload.ts                 compress > bg removal > upload > insert
 │   └── types.ts                  generated from supabase tables
 │
-├── public/                       static files served as-is (logo, icons)
-├── .env.local                    keys, gitignored
+├── public/                       static files served as-is
+│   ├── icon-192.png              android home screen
+│   ├── icon-512.png              splash screen
+│   └── apple-touch-icon.png      ios home screen
+├── .env.local                    keys, GIT IGNORED
 ├── package.json                  lists "next" - this is what makes it a next.js app
 ├── tsconfig.json
 ├── next.config.ts
