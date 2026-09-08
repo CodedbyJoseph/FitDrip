@@ -35,41 +35,28 @@ unmanageable class naming + inconsistent spacing                   |  tailwind
 
 ```
 REACT
-without |  grid.innerHTML = ""  then rebuild all 40 cards by hand
-        |  images reload, screen flashes, scroll jumps to top
-        |  header count updated separately — forget once and it lies
-with    |  {items.map(i => <GarmentCard item={i} />)}
-        |  react diffs old vs new, removes only the 32 that changed
-        |  count reads from the same list, so it cant disagree
+without |  after any change, wipe the page and rebuild every element by hand (slow, redundant reloads)
+with    |  describe the page once as a list, react handles updating it by comparing old vs new
 
 JSX
-without |  _jsx("div", { className: "card", children: item.colour })
-        |  unreadable past 2 levels of nesting, typos unnoticed
-with    |  <div className="card">{item.colour}</div>
-        |  real syntax — editor catches typos and unclosed tags
+without |  markup written as nested function calls, unreadable past two levels of nesting
+with    |  markup written as html-looking tags inside the js file
 
 COMPILER
-without |  browser hits <div> inside a .js file --> syntax error, page dead
-with    |  jsx rewritten to _jsx() calls before the browser ever sees it
-        |  also strips the TS type labels in the same pass
+without |  browser cannot parse jsx html-markup
+with    |  converts tags into native function calls before the browser sees them
 
 TYPESCRIPT
-without |  item.color when the column is colour
-        |  no error, card renders blank, 20 min hunting the missing u
-with    |  red underline as you type: "did you mean colour?"
-        |  type item. and the editor lists the real column names
+without |  misspell a column name and nothing signals error
+with    |  red underline as you type, correct spelling suggested
 
 NEXT.JS
-without |  react project + separate backend project (like PasswordVault)
-        |  two codebases, two deploys, hand-rolled image resizing
-with    |  one folder — app/api/ is the backend, <Image> resizes photos
-        |  one deploy, vercel recognizes the structure with no config
+without |  react is ui only — no urls/pages, no server side (must build routing and api layer yourself)
+with    |  folder names become urls, the api folder is the backend (simply integrated backend)
 
 TAILWIND
-without |  invent a name, then keep it in sync across two files
-        |  free-typed px values drift — 14px here, 16px there
-with    |  <div className="rounded-lg bg-white p-3">
-        |  no name, no second file, p-3 comes from a fixed scale
+without |  invent a class name, then keep it in sync across two files
+with    |  style applied on the element itself using preset shorthand names
 ```
 
 ## How they stack (Top-down)
@@ -200,6 +187,12 @@ outfit_items  |  check outfit_id, which equals outfits.id, then check
 *logged in users can only operate on their own data
 ```
 
+```
+Note: the alternative was service_role in api routes — verify the token,
+extract the uuid, scope every query by hand (the PasswordVault_v1 model,
+minus FastAPI). chose RLS instead, less code, less error prone.
+```
+
 ## Security Model - Supabase Storage
 ```
 - private bucket, blocks data access (similar to rls with anon)
@@ -214,8 +207,51 @@ items bucket  |  the first folder in the path must = auth.uid()     -->{ user_id
 *logged in users can only reach files inside their own folder
 ```
 
+## Project Tree (TENTATIVE)
 ```
-Note: the alternative was service_role in api routes — verify the token,
-extract the uuid, scope every query by hand (the PasswordVault_v1 model,
-minus FastAPI). chose RLS instead, less code, less error prone.
+fitdrip/
+├── app/                          <- folder path = url. next.js reads this
+│   ├── layout.tsx                root shell (html, fonts, nav)
+│   ├── globals.css               the one css file (tailwind import)
+│   ├── page.tsx                  /                   landing
+│   ├── wardrobe/page.tsx         /wardrobe           grid + filters
+│   ├── upload/page.tsx           /upload             photo + tagging
+│   ├── outfits/page.tsx          /outfits            saved outfits
+│   ├── outfits/builder/page.tsx  /outfits/builder    manual builder
+│   ├── stylist/page.tsx          /stylist            ai chat
+│   └── api/
+│       └── stylist/route.ts      SERVER ONLY - holds GEMINI_API_KEY
+│
+├── components/                   reusable ui, imported by pages
+│   ├── GarmentCard.tsx           used in wardrobe + builder + chat
+│   ├── TagChips.tsx              tap-to-select tags, no free text
+│   ├── FilterBar.tsx
+│   ├── OutfitCard.tsx
+│   └── ChatMessage.tsx
+│
+├── lib/                          shared logic, no ui
+│   ├── supabase.ts               browser client (anon key)
+│   ├── supabase-server.ts        route client, takes the user's token
+│   ├── images.ts                 getImageUrl() - batched signed urls
+│   ├── upload.ts                 compress > bg removal > upload > insert
+│   └── types.ts                  generated from supabase tables
+│
+├── public/                       static files served as-is (logo, icons)
+├── .env.local                    keys, gitignored
+├── package.json                  lists "next" - this is what makes it a next.js app
+├── tsconfig.json
+├── next.config.ts
+└── ARCHITECTURE.md
+```
+
+```
+NAMING IS THE CONFIG  (next.js + vercel convention, not a rule of js)
+page.tsx    |  a visitable url. shipped to the browser
+route.ts    |  an api endpoint. runs on the server, never shipped
+layout.tsx  |  wraps every page below it in the folder
+folder name |  becomes the url segment
+
+components/ and lib/ are just imports — they get bundled INTO whichever
+side imports them. a lib file imported by a page ends up in the browser.
+--> read GEMINI_API_KEY inside route.ts itself, never from a lib/ file
 ```
