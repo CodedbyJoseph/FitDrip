@@ -4,7 +4,7 @@ FRONTEND
 Structure  |  jsx markup inside .tsx files
 Style      |  tailwind css, shadcn ui
 Behaviour  |  typescript + react
-Framework  |  next.js (wraps front + back)
+Framework  |  next.js (wraps front + backend as next.js app)
 
 BACKEND
 user auth      |  supabase auth, google Oauth
@@ -22,7 +22,7 @@ deployed   |  vercel
 Next.js + Vercel
 PRO: one project for front and back, one deploy, same language both sides; Vercel made Next.js so no config needed
 
-## Frontend decisions
+## Frontend Decisions
 ```
 PROBLEM                                                            |  SOLUTION
 you update the page by hand                                        |  react js
@@ -80,7 +80,7 @@ Next        - framework around React
       TS - layer over JS
 ```
 
-## Backend decisions
+## Backend Decisions
 ```
 DATABASE: supabase
 - free tier
@@ -117,7 +117,7 @@ BG REMOVAL: @imgly/background-removal
   until measurably slow
 ```
 
-## Data model
+## Data Model
 ```
 3 tables. no users table — supabase auth provides it.
 ```
@@ -130,11 +130,6 @@ image_path  text    (path to file in bucket, {user_id}/{item_id}.webp)
 type        text
 colour      text
 tags        text[]  ["cropped", "oversized", "chunky"]
-
-NOTE: store the path, not a full url. a url has the mode baked in
-(.../object/public/...), so flipping the bucket to private would kill
-every stored url. with just the path, the db never changes — the switch
-is one function swap: getPublicUrl --> createSignedUrl
 ```
 
 ```
@@ -149,8 +144,10 @@ NOTE: items of each outfit are not in the table; item count varies, columns will
 
 ```
 OUTFIT_ITEMS  (one row per piece of an outfit)
-outfit_id   uuid
-item_id     uuid
+outfit_id   uuid    --> outfits.id
+item_id     uuid    --> items.id
+
+NOTE: both are foreign keys — copies of another table's id
 
   outfit_id | item_id
   7         | 12        <- black cropped hoodie
@@ -159,9 +156,9 @@ item_id     uuid
   9         | 12        <- same hoodie, different outfit
 ```
 
-## Storage layout
+## Image Storage
 ```
-item bucket
+"item" bucket: holds the actual image files
 
 items / {user_id} / {item_id}.webp
 
@@ -171,19 +168,7 @@ items
         └── {item_id}.webp
 ```
 
-```
-PUBLIC vs PRIVATE  (chose public for now)
-
-public   permanent url, works for anyone who has it, no login
-         simplest code, browser caching + next/image work with no effort
-private  url returns unauthorized; code generates a signed link (~1hr)
-
-public bucket = easier code, but any url works for anyone, no login
-easier because a public url is instant; a private one must be requested
-from supabase, awaited, and re-requested when it expires (~1hr)
-```
-
-## AI stylist implementation
+## AI Stylist Implementation
 ```
 1. user enters prompt
 2. backend sends user-scoped wardrobe + rules + conversation so far to the api
@@ -193,8 +178,44 @@ from supabase, awaited, and re-requested when it expires (~1hr)
 5. repeat — wardrobe stays the same, conversation grows
 ```
 
-## Still to decide
+## Security Model - Supabase Postgres
 ```
-2. privacy rules    |  the actual "users only see their own rows" policy
-                    |  + flip bucket to private at the same time
+THE PIECES
+anon key  |  public in js, allows talking to supabase project
+             (frontend starts google login; supabase issues the session token)
+RLS       |  on, denies data access by default
+             — implement policies: logged in user can only read/change own data (based on verified session token)
+             — public anon key harmless: logged out returns nothing, logged in returns only that user's rows
+
+RESULT: browser talks to the database directly, not backend; RLS decides what it gets.
+```
+
+```
+TABLE POLICIES  (allow all SQL operations — select/insert/update/delete)
+items         |  user_id = auth.uid()
+outfits       |  user_id = auth.uid()
+outfit_items  |  check outfit_id, which equals outfits.id, then check
+                 outfits.user_id = auth.uid()
+                 
+*logged in users can only operate on their own data
+```
+
+## Security Model - Supabase Storage
+```
+- private bucket, blocks data access (similar to rls with anon)
+- requires policy to override rule
+- prevents unathorized users from accessing others' data
+```
+
+```
+STORAGE POLICY  (all operations)
+items bucket  |  the first folder in the path must = auth.uid()     -->{ user_id}/{item_id}.webp
+
+*logged in users can only reach files inside their own folder
+```
+
+```
+Note: the alternative was service_role in api routes — verify the token,
+extract the uuid, scope every query by hand (the PasswordVault_v1 model,
+minus FastAPI). chose RLS instead, less code, less error prone.
 ```
