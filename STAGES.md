@@ -1,5 +1,7 @@
 ## STAGES OF DEVELOPMENT
 ```
+Stage 0: npx create next app to initialize proper folder/file names and starting code, npm install dependencies
+
 STAGE          |  COMPONENTS                                          |  RUN/TEST
 1. UI          |  next.js, react, tailwind                            |  mock item list, npm run dev
 2. auth        |  supabase auth, google oauth                         |  log in/out, session persists

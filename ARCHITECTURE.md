@@ -274,7 +274,7 @@ fitdrip/
 │   ├── icon-512.png              splash screen
 │   └── apple-touch-icon.png      ios home screen
 ├── .env.local                    keys, GIT IGNORED
-├── package.json                  lists "next" - this is what makes it a next.js app
+├── package.json                  lists "next" - this is what makes it a next.js app; requirements file
 ├── tsconfig.json
 ├── next.config.ts
 └── ARCHITECTURE.md
