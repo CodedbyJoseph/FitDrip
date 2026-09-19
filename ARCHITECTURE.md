@@ -37,6 +37,7 @@ tailwindcss                |  styling
 browser-image-compression  |  shrink before upload
 @google/genai              |  gemini
 shadcn ui                  |  prebuilt components
+@base-ui/react             |  behaviour under shadcn (dropdowns, dialogs, focus)
 ```
 
 ## Frontend Decisions
@@ -245,6 +246,7 @@ fitdrip/
 ├── app/                          <- folder path = url. next.js reads this
 │   ├── layout.tsx                root shell (html, fonts, nav)
 │   ├── globals.css               the one css file (tailwind import)
+│   ├── favicon.ico               browser tab icon
 │   ├── page.tsx                  /                   landing
 │   ├── wardrobe/page.tsx         /wardrobe           grid + filters
 │   ├── upload/page.tsx           /upload             photo + tagging
@@ -252,10 +254,12 @@ fitdrip/
 │   ├── outfits/builder/page.tsx  /outfits/builder    manual builder
 │   ├── stylist/page.tsx          /stylist            ai chat
 │   ├── manifest.ts               pwa - makes "add to home screen" open as an app
+│   ├── auth/callback/route.ts    google sends the user back here, code swapped for a session
 │   └── api/
 │       └── stylist/route.ts      SERVER ONLY - holds GEMINI_API_KEY
 │
 ├── components/                   reusable ui, imported by pages
+│   ├── ui/                       shadcn's copied components (button.tsx, etc.)
 │   ├── GarmentCard.tsx           used in wardrobe + builder + chat
 │   ├── TagChips.tsx              tap-to-select tags, no free text
 │   ├── FilterBar.tsx
@@ -264,19 +268,29 @@ fitdrip/
 │
 ├── lib/                          shared logic, no ui
 │   ├── supabase.ts               browser client (anon key)
-│   ├── supabase-server.ts        route client, takes the user's token
+│   ├── supabase-server.ts        route client, reads the login cookie
 │   ├── images.ts                 getImageUrl() - batched signed urls
 │   ├── upload.ts                 compress > bg removal > upload > insert
+│   ├── utils.ts                  cn() helper, used by every shadcn component
 │   └── types.ts                  generated from supabase tables
 │
 ├── public/                       static files served as-is
 │   ├── icon-192.png              android home screen
 │   ├── icon-512.png              splash screen
 │   └── apple-touch-icon.png      ios home screen
+│
+├── proxy.ts                      runs before every request, keeps the login session fresh
 ├── .env.local                    keys, GIT IGNORED
 ├── package.json                  lists "next" - this is what makes it a next.js app; requirements file
+├── package-lock.json             exact versions of everything. COMMIT - vercel installs from this
 ├── tsconfig.json
 ├── next.config.ts
+├── postcss.config.mjs            hooks tailwind into the build
+├── eslint.config.mjs             lint rules
+├── components.json               shadcn settings
+├── AGENTS.md, CLAUDE.md          ai-tool instructions from create-next-app
+├── README.md
+├── STAGES.md
 └── ARCHITECTURE.md
 ```
 
