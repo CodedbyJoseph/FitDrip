@@ -65,7 +65,7 @@ without |  browser cannot parse jsx html-markup
 with    |  converts tags into native function calls before the browser sees them
 
 TYPESCRIPT
-without |  misspell a column name and nothing signals error
+without |  misspell a table column name or invalid value and nothing signals error
 with    |  red underline as you type, correct spelling suggested
 
 NEXT.JS
@@ -83,6 +83,18 @@ Next        - framework around React
   React     - the library JSX targets
     JSX     - syntax inside JS/TS files
       TS - layer over JS
+```
+
+## How Each Dependency in package.json Gets Activated
+```
+NEXT framework
+- is started by the installed "next" package and the commands that come with it
+
+REACT
+- next imports it to files automatically
+
+OTHER LIBRARIES
+- must be imported
 ```
 
 ## Backend Decisions
@@ -132,7 +144,7 @@ ITEMS  (one row per piece)
 id          uuid
 user_id     uuid
 image_path  text    (path to file in bucket, {user_id}/{item_id}.webp)
-type        text
+type        text    (t-shirt, pants, hoodie, sweatshirt, long-sleeve, shorts, shoes, dress, skirt, crop-top, outerwear, accessory)
 colour      text
 tags        text[]  ["cropped", "oversized", "chunky"]
 ```
