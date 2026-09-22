@@ -1,11 +1,6 @@
 // this file stores the mock items for stage 1
 
-export const ITEM_TYPES = [
-  "t-shirt", "pants", "hoodie", "sweatshirt", "long-sleeve", "shorts",
-  "shoes", "dress", "skirt", "crop-top", "outerwear", "accessory"
-] as const
-
-export type ItemType = (typeof ITEM_TYPES)[number]
+import type { ItemType } from "@/lib/item-types"
 
 export type Item = {
   id: string
